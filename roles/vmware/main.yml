@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Install open-vm-tools
+      apt:
+        name: open-vm-tools
+        state: latest
+        update_cache: true
