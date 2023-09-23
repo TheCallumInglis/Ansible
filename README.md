@@ -7,7 +7,7 @@ Gitlab: [https://gitlab.4oh4.co.uk/TheCallumInglis/ansible](https://gitlab.4oh4.
 GitHub: [https://github.com/TheCallumInglis/Ansible](https://github.com/TheCallumInglis/Ansible) (Mirror)
 
 ## Roles
-- [Zabbix Agent, Proxy](roles/Zabbix/README.md)
+- [Zabbix Agent, Proxy](roles/zabbix/README.md)
 - GitLab Runner
 - Docker
 - VMWare Tools
