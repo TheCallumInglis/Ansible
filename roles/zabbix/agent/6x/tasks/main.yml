@@ -1,0 +1,57 @@
+---
+- name: Include distro vars
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Include distro tasks
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: Remove hostname in zabbix config file
+  lineinfile:
+    path: "{{ zabbix_directory }}/zabbix_agentd.conf"
+    regexp: ^(Hostname=)(.*)$
+    backrefs: true
+    state: absent
+
+- name: Create Zabbix include directory
+  file:
+    path: "{{ zabbix_directory }}/zabbix_agentd.d/"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Include config parameters
+  lineinfile:
+    path: "{{ zabbix_directory }}/zabbix_agentd.conf"
+    regexp: ^(Include=)$
+    insertafter: "# Include="
+    line: Include={{ zabbix_directory }}/zabbix_agentd.d/*.conf
+    backrefs: true
+    state: present
+
+- name: Configure Zabbix Agent
+  template:
+    owner: root
+    group: root
+    mode: 0644
+    src: "{{ role_path }}/templates/zabbix_agent.conf.j2"
+    dest: "{{ zabbix_directory }}/zabbix_agentd.d/agent.conf"
+  notify:
+    - Restart zabbix-agent
+
+- name: Copy PSK file
+  template:
+    src: "{{ role_path }}/templates/psk.j2"
+    dest: "{{ zabbix_directory }}/zabbix_agent.psk"
+    owner: "{{ zabbix_user }}"
+    group: "{{ zabbix_user }}"
+    mode: 0400
+  when: zabbix_tls_psk is defined
+  notify:
+    - Restart zabbix-agent
+
+- name: Enable Zabbix Agent Service on startup
+  service: 
+    name: zabbix-agent 
+    state: restarted 
+    enabled: true

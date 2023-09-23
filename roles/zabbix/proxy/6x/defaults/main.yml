@@ -1,0 +1,17 @@
+
+# Zabbix
+zabbix_version: "6.0"
+
+zabbix_server: "127.0.0.1"
+# zabbix_tls_psk_identity: ""
+# zabbix_tls_psk: ""
+
+zabbix_proxy_offline_buffer: "12"
+zabbix_config_frequency: "900"
+zabbix_start_pingers: "5"
+zabbix_start_discoverers: "5"
+zabbix_start_vmware_collectors: "1"
+zabbix_start_snmp_trapper: "1"
+
+# Unlikely to change
+zabbix_directory: /etc/zabbix

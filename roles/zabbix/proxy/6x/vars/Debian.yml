@@ -1,0 +1,3 @@
+zabbix_user: zabbix
+db_username: zabbix
+db_password: password

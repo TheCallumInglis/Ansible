@@ -1,2 +1,4 @@
 hosts
 *.retry
+
+git-ex-*

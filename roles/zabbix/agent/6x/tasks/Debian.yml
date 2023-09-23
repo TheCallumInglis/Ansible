@@ -1,0 +1,24 @@
+---
+- name: Download Zabbix GPG key
+  get_url:
+    url: https://repo.zabbix.com/zabbix-official-repo.key
+    dest: /usr/share/keyrings/zabbix-official-repo.asc
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Add Zabbix repo
+  apt_repository:
+   repo: deb [signed-by=/usr/share/keyrings/zabbix-official-repo.asc] https://repo.zabbix.com/zabbix/{{ zabbix_version }}/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main
+   filename: zabbix_{{ zabbix_version | regex_replace("\.", "_") }}
+   update_cache: true
+   state: present
+
+- name: Install Zabbix agent package
+  apt:
+    name: 
+      - zabbix-agent
+      - zabbix-get
+      - zabbix-release
+    state: latest
+    update_cache: true

@@ -1,0 +1,135 @@
+---
+- name: Include distro vars
+  include_vars:  "{{ ansible_os_family }}.yml"
+
+- name: Include distro tasks
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: Change file ownership, group and permissions
+  ansible.builtin.file:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    owner: "{{ zabbix_user }}"
+    group: "{{ zabbix_user }}"
+    mode: 0644
+
+- name: Set Zabbix Proxy Server
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^Server=)(.*)$'
+    replace: '\1{{ zabbix_server }}'
+    backup: yes
+
+- name: Set Zabbix Proxy Hostname
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^Hostname=)(.*)$'
+    replace: '\1{{ ansible_hostname | upper}}'
+
+- name: Set Zabbix Proxy LogFileSize
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^LogFileSize=)(.*)$'
+    replace: '\1 128'
+
+- name: Set Zabbix Proxy Enable Remote Commands
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (EnableRemoteCommands=)(.*)$'
+    replace: '\2 1'
+
+- name: Set Zabbix Proxy DB Password
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (DBPassword=)(.*)$'
+    replace: '\2{{ db_password }}'
+
+- name: Set Zabbix Proxy Offline Buffer
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (ProxyOfflineBuffer=)(.*)$'
+    replace: '\2 {{ zabbix_proxy_offline_buffer }}'
+
+- name: Set Zabbix Proxy Config Frequency
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (ConfigFrequency=)(.*)$'
+    replace: '\2 {{ zabbix_config_frequency }}'
+    
+- name: Set Zabbix Proxy Start Pingers
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (StartPingers=)(.*)$'
+    replace: '\2 {{ zabbix_start_pingers }}'
+
+- name: Set Zabbix Proxy Start Discoverers
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (StartDiscoverers=)(.*)$'
+    replace: '\2 {{ zabbix_start_discoverers }}'
+
+- name: Set Zabbix Proxy Start VMware Collectors
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (StartVMwareCollectors=)(.*)$'
+    replace: '\2 {{ zabbix_start_vmware_collectors }}'
+
+- name: Set Zabbix Proxy Start SNMP Trapper
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (StartSNMPTrapper=)(.*)$'
+    replace: '\2 {{ zabbix_start_snmp_trapper }}'
+
+# PSK Start
+- name: Set Zabbix Proxy TLS Connect PSK
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (TLSConnect=)(.*)$'
+    replace: '\2psk'
+  when: zabbix_tls_psk_identity is defined and zabbix_tls_psk is defined
+
+- name: Set Zabbix Proxy TLS Accept PSK
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (TLSAccept=)(.*)$'
+    replace: '\2psk'
+  when: zabbix_tls_psk_identity is defined and zabbix_tls_psk is defined
+
+- name: Set Zabbix Proxy TLS PSK ID
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (TLSPSKIdentity=)(.*)$'
+    replace: '\2 {{ zabbix_tls_psk_identity }}'
+  when: zabbix_tls_psk_identity is defined and zabbix_tls_psk is defined
+
+- name: Set Zabbix Proxy TLS PSK File
+  replace:
+    path: "{{ zabbix_directory }}/zabbix_proxy.conf"
+    regexp: '(^#)\ (TLSPSKFile=)(.*)$'
+    replace: '\2{{ zabbix_directory }}/zabbix_proxy.psk'
+  when: zabbix_tls_psk_identity is defined and zabbix_tls_psk is defined
+
+- name: Copy PSK file
+  template:
+    src: "{{ role_path }}/templates/psk.j2"
+    dest: "{{ zabbix_directory }}/zabbix_proxy.psk"
+    owner: "{{ zabbix_user }}"
+    group: "{{ zabbix_user }}"
+    mode: 0400
+  when: zabbix_tls_psk_identity is defined and zabbix_tls_psk is defined
+  notify:
+    - Restart zabbix-proxy
+# PSK End
+
+- name: Enable Zabbix Proxy Service on startup
+  service: 
+    name: zabbix-proxy 
+    state: restarted 
+    enabled: true
+
+- name: Display Proxy PSKs
+  debug:
+    msg:
+      - "Hostname:     {{ ansible_hostname | upper }}"
+      - "Proxy IP:     {{ ansible_default_ipv4.address }}"
+      - "Proxy PSK ID: {{ zabbix_tls_psk_identity }}"
+      - "Proxy PSK:    {{ zabbix_tls_psk }}"

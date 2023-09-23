@@ -1,0 +1,27 @@
+# {{ ansible_managed }}
+LogType=file
+LogFile=/var/log/zabbix/zabbix_agentd.log
+LogFileSize=50
+
+AllowKey=system.run[*]
+LogRemoteCommands=1
+
+Server={{ zabbix_server }}
+ServerActive={{ zabbix_server_active }}
+
+HostnameItem=system.hostname
+
+{% if zabbix_host_metadata is defined %}
+HostMetadata={{ zabbix_host_metadata }}
+{% endif %}
+
+{% if zabbix_host_interface is defined %}
+HostInterface={{ zabbix_host_interface }}
+{% endif %}
+
+{% if zabbix_tls_psk_identity is defined and zabbix_tld_psk is defined %}
+TLSConnect=psk
+TLSAccept=psk
+TLSPSKIdentity={{ zabbix_tls_psk_identity }}
+TLSPSKFile={{ zabbix_directory }}/zabbix_agent.psk
+{% endif %}

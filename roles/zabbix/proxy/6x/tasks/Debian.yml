@@ -1,0 +1,84 @@
+---
+- name: Download Zabbix GPG key
+  get_url:
+    url: https://repo.zabbix.com/zabbix-official-repo.key
+    dest: /usr/share/keyrings/zabbix-official-repo.asc
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Add Zabbix repo
+  apt_repository:
+   repo: deb [signed-by=/usr/share/keyrings/zabbix-official-repo.asc] https://repo.zabbix.com/zabbix/{{ zabbix_version }}/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main
+   filename: zabbix_{{ zabbix_version | regex_replace("\.", "_") }}
+   update_cache: true
+   state: present
+
+- name: Install Zabbix agent package
+  apt:
+    name: 
+      - zabbix-proxy-mysql
+      - zabbix-sql-scripts
+    state: latest
+    update_cache: true
+
+- name: Install MySQL Server
+  apt:
+    name: 
+      - mysql-server-8.0
+      - mysql-client-8.0
+    update_cache: yes
+    state: latest
+
+- name: Install Python3, Pip
+  apt:
+    name: 
+      - python3
+      - python3-pip
+    update_cache: yes
+    state: latest
+
+- name: Install PyMySQL
+  pip:
+    name: pymysql
+    state: present
+
+- name: Enable MySQL Service on startup
+  service: 
+    name: mysql 
+    state: started 
+    enabled: true
+
+- name: Create Proxy Database  
+  mysql_db:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: zabbix_proxy 
+    state: present 
+  register: db_create
+
+- name: Create Zabbix Proxy DB User
+  mysql_user:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: '{{ db_username }}'
+    password: '{{ db_password }}'
+    priv: 'zabbix_proxy.*:ALL'
+    state: present
+
+- name: Import proxy schema
+  mysql_db: 
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    name: zabbix_proxy
+    state: import
+    target: /usr/share/zabbix-sql-scripts/mysql/proxy.sql 
+  when: db_create is changed
+
+- name: Install Common Packages For Monitoring
+  apt:
+    name: 
+      - curl
+      - wget
+      - snmp
+      - snmpd
+      - snmp-mibs-downloader
+    update_cache: yes
+    state: latest

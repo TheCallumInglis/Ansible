@@ -1,0 +1,13 @@
+
+# Zabbix
+zabbix_version: "6.0"
+
+zabbix_server: "127.0.0.1"
+zabbix_server_active: "127.0.0.1"
+zabbix_host_metadata: "zabbix_agent linux ubuntu"
+zabbix_tls_psk_identity: ""
+zabbix_tls_psk: ""
+
+# Unlikely to change
+zabbix_directory: /etc/zabbix
+# zabbix_host_interface: "eth0" # Optional
